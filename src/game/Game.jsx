@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./Game.css";
 
-// Array of 10 different color sets
 const colorSets = [
     ["#1e88e5", "#87CEEB", "#1E90FF", "#4169E1", "#4682B4", "#5F9EA0"],
     ["#008F6B", "#00A982", "#007F63", "#00A074", "#009566", "#007C5B"],
@@ -15,7 +14,6 @@ const colorSets = [
     ["#672249", "#AA1A6A", "#AE3E7C", "#B4558A", "#D664A4", "#FF0E94"],
 ];
 
-// Function to get a random color from the current color set
 const getRandomColorSet = (currentSetIndex) => {
     const currentSet = colorSets[currentSetIndex];
     const correctColor = currentSet[Math.floor(Math.random() * currentSet.length)];
@@ -24,6 +22,7 @@ const getRandomColorSet = (currentSetIndex) => {
 };
 
 const Game = () => {
+    const [gameStarted, setGameStarted] = useState(false);
     const [currentSetIndex, setCurrentSetIndex] = useState(0);
     const [gameState, setGameState] = useState(getRandomColorSet(0));
     const [feedback, setFeedback] = useState(null);
@@ -34,9 +33,9 @@ const Game = () => {
     const timerRef = useRef(null);
 
     useEffect(() => {
-        startTimer();
+        if (gameStarted) startTimer();
         return () => clearInterval(timerRef.current);
-    }, [round]);
+    }, [round, gameStarted]);
 
     const startTimer = () => {
         clearInterval(timerRef.current);
@@ -66,14 +65,12 @@ const Game = () => {
         clearInterval(timerRef.current);
         setFeedback(null);
 
-        // change to the next color set after each round
         if (currentSetIndex < colorSets.length - 1) {
             setCurrentSetIndex((prevIndex) => prevIndex + 1);
             setGameState(getRandomColorSet(currentSetIndex + 1));
             setRound((prev) => prev + 1);
         } else {
-            // End of the game after the 10th round
-            alert("🎉 Game Over! Click Ok to strat New game! Your Score: " + score);
+            alert("🎉 Game Over! Click Ok to start a New Game! Your Score: " + score);
             if (score > bestScore) {
                 setBestScore(score);
             }
@@ -87,44 +84,56 @@ const Game = () => {
         setRound(1);
         setScore(0);
         setTimer(10);
+        setGameStarted(false);
     };
 
     return (
         <div className="game-container">
-            <div className="header">
-                <div>TIME<br /><span>{timer.toFixed(2)}</span></div>
-                <div>ROUND<br /><span>{round}/10</span></div>
-                <div data-testid="score" >SCORE<br /><span>{score}</span></div>
-                <div>BEST<br /><span>{bestScore}</span></div>
-            </div>
-
-            <div data-testid="colorBox" className={`color-display ${feedback}`}>
-                <div
-                    data-testid="gameInstructions"
-                    className="color-box"
-                    style={{ backgroundColor: gameState.correctColor }}
-                >
-                    {feedback === "correct" || feedback === "wrong" ? (
-                        <span data-testid="gameStatus">
-                            {feedback === "correct" ? "Correct!" : "Wrong Selection!"}
-                        </span>
-                    ) : (
-                        "GUESS THE COLOR"
-                    )}
+            {!gameStarted && (
+                <div className="start-screen">
+                    <h1 data-testid="gameInstructions">Guess the Color</h1>
+                    <button className="start-button" onClick={() => setGameStarted(true)}>
+                        Start Game
+                    </button>
                 </div>
-            </div>
+            )}
 
+            {gameStarted && (
+                <>
+                    <div className="header">
+                        <div>TIME<br /><span>{timer.toFixed(2)}</span></div>
+                        <div>ROUND<br /><span>{round}/10</span></div>
+                        <div data-testid="score">SCORE<br /><span>{score}</span></div>
+                        <div>BEST<br /><span>{bestScore}</span></div>
+                    </div>
 
-            <div data-testid="colorOption" className="options">
-                {gameState.options.map((color) => (
-                    <button
-                        key={color}
-                        className="option"
-                        style={{ backgroundColor: color }}
-                        onClick={() => handleGuess(color)}
-                    ></button>
-                ))}
-            </div>
+                    <div data-testid="colorBox" className={`color-display ${feedback}`}>
+                        <div
+                            className="color-box"
+                            style={{ backgroundColor: gameState.correctColor }}
+                        >
+                            {feedback === "correct" || feedback === "wrong" ? (
+                                <span data-testid="gameStatus">
+                                    {feedback === "correct" ? "Correct!" : "Wrong Selection!"}
+                                </span>
+                            ) : (
+                                "GUESS THE COLOR"
+                            )}
+                        </div>
+                    </div>
+
+                    <div data-testid="colorOption" className="options">
+                        {gameState.options.map((color) => (
+                            <button
+                                key={color}
+                                className="option"
+                                style={{ backgroundColor: color }}
+                                onClick={() => handleGuess(color)}
+                            ></button>
+                        ))}
+                    </div>
+                </>
+            )}
         </div>
     );
 };
